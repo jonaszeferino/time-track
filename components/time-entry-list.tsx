@@ -1,12 +1,11 @@
 "use client"
 
-import { Text, Card, Heading, VStack, HStack, Icon, IconButton } from "@chakra-ui/react"
 import { Trash2, Clock } from "lucide-react"
 import type { TimeEntry } from "@/app/page"
 
 interface TimeEntryListProps {
   entries: TimeEntry[]
-  onDelete: (id: string) => void
+  onDelete: (id: number) => void
 }
 
 export function TimeEntryList({ entries, onDelete }: TimeEntryListProps) {
@@ -28,77 +27,62 @@ export function TimeEntryList({ entries, onDelete }: TimeEntryListProps) {
 
   if (entries.length === 0) {
     return (
-      <Card.Root>
-        <Card.Header>
-          <Heading size="lg">Histórico de Entradas</Heading>
-        </Card.Header>
-        <Card.Body>
-          <VStack py={12} textAlign="center">
-            <Icon boxSize={12} color="gray.400" mb={4}>
-              <Clock />
-            </Icon>
-            <Text color="gray.600">Nenhuma entrada registrada ainda</Text>
-            <Text fontSize="sm" color="gray.600">
-              Inicie um timer para começar
-            </Text>
-          </VStack>
-        </Card.Body>
-      </Card.Root>
+      <div className="bg-white rounded-lg shadow-sm border">
+        <div className="p-6 border-b">
+          <h2 className="text-xl font-semibold">Histórico de Entradas</h2>
+        </div>
+        <div className="p-12 text-center">
+          <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">Nenhuma entrada registrada ainda</p>
+          <p className="text-sm text-gray-600">
+            Inicie um timer para começar
+          </p>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Card.Root>
-      <Card.Header>
-        <Heading size="lg">Histórico de Entradas</Heading>
-      </Card.Header>
-      <Card.Body>
-        <VStack gap={3} align="stretch">
+    <div className="bg-white rounded-lg shadow-sm border">
+      <div className="p-6 border-b">
+        <h2 className="text-xl font-semibold">Histórico de Entradas</h2>
+      </div>
+      <div className="p-6">
+        <div className="space-y-3">
           {entries.map((entry) => (
-            <HStack
+            <div
               key={entry.id}
-              justify="space-between"
-              align="flex-start"
-              gap={4}
-              borderRadius="lg"
-              borderWidth="1px"
-              bg="white"
-              p={4}
-              _hover={{ bg: "gray.50" }}
-              transition="background 0.2s"
+              className="flex justify-between items-start gap-4 rounded-lg border bg-white p-4 hover:bg-gray-50 transition-colors"
             >
-              <VStack flex={1} align="stretch" gap={1}>
-                <HStack gap={2}>
-                  <Text fontWeight="semibold" color="gray.900">
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-gray-900">
                     {entry.client}
-                  </Text>
-                  <Text fontSize="sm" color="gray.600">
+                  </p>
+                  <p className="text-sm text-gray-600">
                     •
-                  </Text>
-                  <Text fontFamily="mono" fontSize="sm" fontWeight="medium" color="blue.500">
+                  </p>
+                  <p className="font-mono text-sm font-medium text-blue-500">
                     {formatDuration(entry.duration)}
-                  </Text>
-                </HStack>
-                <Text fontSize="sm" color="gray.600">
+                  </p>
+                </div>
+                <p className="text-sm text-gray-600">
                   {entry.description}
-                </Text>
-                <Text fontSize="xs" color="gray.600">
+                </p>
+                <p className="text-xs text-gray-600">
                   {formatDate(entry.startTime)}
-                </Text>
-              </VStack>
-              <IconButton
-                variant="ghost"
-                size="sm"
+                </p>
+              </div>
+              <button
                 onClick={() => onDelete(entry.id)}
-                color="gray.600"
-                _hover={{ color: "red.500" }}
+                className="text-gray-600 hover:text-red-500 transition-colors"
               >
-                <Trash2 />
-              </IconButton>
-            </HStack>
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </div>
           ))}
-        </VStack>
-      </Card.Body>
-    </Card.Root>
+        </div>
+      </div>
+    </div>
   )
 }

@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Box, Text, Card, Heading, VStack, HStack, Icon } from "@chakra-ui/react"
 import type { TimeEntry } from "@/app/page"
 import { Calendar, TrendingUp } from "lucide-react"
 
@@ -84,77 +83,73 @@ export function TimeStats({ entries, activeEntry }: TimeStatsProps) {
       .slice(0, 5)
   }
 
+  const weekTotal = getWeekTotal()
+
   return (
-    <VStack gap={6} align="stretch">
-      <Card.Root>
-        <Card.Header>
-          <HStack gap={2}>
-            <Icon boxSize={5}>
-              <Calendar />
-            </Icon>
-            <Heading size="lg">Tempo Hoje</Heading>
-          </HStack>
-        </Card.Header>
-        <Card.Body>
-          <Text fontSize="3xl" fontWeight="bold" color="gray.900">
+    <div className="space-y-6">
+      <div className="bg-white rounded-lg shadow-sm border">
+        <div className="p-6 border-b">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            <h2 className="text-xl font-semibold">Tempo Hoje</h2>
+          </div>
+        </div>
+        <div className="p-6">
+          <p className="text-3xl font-bold text-gray-900">
             {formatDuration(getTodayTotal())}
-          </Text>
-        </Card.Body>
-      </Card.Root>
+          </p>
+        </div>
+      </div>
 
-      <Card.Root>
-        <Card.Header>
-          <HStack gap={2}>
-            <Icon boxSize={5}>
-              <TrendingUp />
-            </Icon>
-            <Heading size="lg">Tempo Semanal</Heading>
-          </HStack>
-        </Card.Header>
-        <Card.Body>
-          <Text fontSize="3xl" fontWeight="bold" color="gray.900">
-            {formatDuration(getWeekTotal())}
-          </Text>
-        </Card.Body>
-      </Card.Root>
+      <div className="bg-white rounded-lg shadow-sm border">
+        <div className="p-6 border-b">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5" />
+            <h2 className="text-xl font-semibold">Tempo Semanal</h2>
+          </div>
+        </div>
+        <div className="p-6">
+          <p className="text-3xl font-bold text-gray-900">
+            {formatDuration(weekTotal)}
+          </p>
+        </div>
+      </div>
 
-      <Card.Root>
-        <Card.Header>
-          <Heading size="lg">Top Clientes</Heading>
-        </Card.Header>
-        <Card.Body>
-          <VStack gap={3} align="stretch">
+      <div className="bg-white rounded-lg shadow-sm border">
+        <div className="p-6 border-b">
+          <h2 className="text-xl font-semibold">Top Clientes</h2>
+        </div>
+        <div className="p-6">
+          <div className="space-y-3">
             {getClientStats().length === 0 ? (
-              <Text fontSize="sm" color="gray.600">
+              <p className="text-sm text-gray-600">
                 Nenhum dado ainda
-              </Text>
+              </p>
             ) : (
               getClientStats().map(([client, duration]) => (
-                <VStack key={client} gap={1} align="stretch">
-                  <HStack justify="space-between" fontSize="sm">
-                    <Text fontWeight="medium" color="gray.900">
+                <div key={client} className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <p className="font-medium text-gray-900">
                       {client}
-                    </Text>
-                    <Text fontFamily="mono" color="blue.500">
+                    </p>
+                    <p className="font-mono text-blue-500">
                       {formatDuration(duration)}
-                    </Text>
-                  </HStack>
-                  <Box h={2} w="full" overflow="hidden" borderRadius="full" bg="gray.200">
-                    <Box
-                      h="full"
-                      bg="blue.500"
-                      transition="width 0.3s"
+                    </p>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                    <div
+                      className="h-full bg-blue-500 transition-all duration-300"
                       style={{
-                        width: `${(duration / getWeekTotal()) * 100}%`,
+                        width: `${weekTotal > 0 ? (duration / weekTotal) * 100 : 0}%`,
                       }}
                     />
-                  </Box>
-                </VStack>
+                  </div>
+                </div>
               ))
             )}
-          </VStack>
-        </Card.Body>
-      </Card.Root>
-    </VStack>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

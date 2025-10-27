@@ -1,5 +1,6 @@
 'use client'
 
+import type React from 'react'
 import { useMemo } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 
@@ -78,21 +79,6 @@ const fieldVariants = cva(
   },
 )
 
-function Field({
-  className,
-  orientation = 'vertical',
-  ...props
-}: React.ComponentProps<'div'> & VariantProps<typeof fieldVariants>) {
-  return (
-    <div
-      role="group"
-      data-slot="field"
-      data-orientation={orientation}
-      className={cn(fieldVariants({ orientation }), className)}
-      {...props}
-    />
-  )
-}
 
 function FieldContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -230,8 +216,32 @@ function FieldError({
   )
 }
 
+// Export the original Field as a wrapper
+export const Field = ({ children, ...props }: React.ComponentProps<'div'> & { label?: string }) => {
+  if (props.label) {
+    return (
+      <div className="flex flex-col gap-2">
+        <label className="text-sm font-medium text-gray-700">{props.label}</label>
+        <div {...props}>{children}</div>
+      </div>
+    )
+  }
+  
+  const { orientation = 'vertical', ...rest } = props as VariantProps<typeof fieldVariants> & React.ComponentProps<'div'>
+  return (
+    <div
+      role="group"
+      data-slot="field"
+      data-orientation={orientation}
+      className={cn(fieldVariants({ orientation }), props.className)}
+      {...rest}
+    >
+      {children}
+    </div>
+  )
+}
+
 export {
-  Field,
   FieldLabel,
   FieldDescription,
   FieldError,

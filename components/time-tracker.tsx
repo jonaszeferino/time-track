@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { Box, Button, Input, Text, Card, Heading, VStack, Icon, Select } from "@chakra-ui/react"
 import { Field } from "@/components/ui/field"
 import { Play, Square } from "lucide-react"
 import type { TimeEntry, Client } from "@/app/page"
@@ -49,7 +48,7 @@ export function TimeTracker({ activeEntry, onStart, onStop, clients }: TimeTrack
     if (activeEntry) {
       onStop()
     } else if (clientId && description) {
-      const selectedClient = clients.find((c) => c.id === clientId)
+      const selectedClient = clients.find((c) => c.id.toString() === clientId)
       if (selectedClient) {
         onStart(selectedClient.name, description)
         setClientId("")
@@ -59,87 +58,91 @@ export function TimeTracker({ activeEntry, onStart, onStop, clients }: TimeTrack
   }
 
   return (
-    <Card.Root>
-      <Card.Header>
-        <Heading size="lg">{activeEntry ? "Timer Ativo" : "Iniciar Nova Tarefa"}</Heading>
-      </Card.Header>
-      <Card.Body>
+    <div className="bg-white rounded-lg shadow-sm border">
+      <div className="p-6 border-b">
+        <h2 className="text-xl font-semibold">{activeEntry ? "Timer Ativo" : "Iniciar Nova Tarefa"}</h2>
+      </div>
+      <div className="p-6">
         {activeEntry ? (
-          <VStack gap={6} align="stretch">
-            <Box borderRadius="lg" bg="gray.100" p={6} textAlign="center">
-              <Text mb={2} fontSize="sm" fontWeight="medium" color="gray.600">
+          <div className="space-y-6">
+            <div className="rounded-lg bg-gray-100 p-6 text-center">
+              <p className="text-sm font-medium text-gray-600 mb-2">
                 Tempo Decorrido
-              </Text>
-              <Text fontFamily="mono" fontSize="5xl" fontWeight="bold" color="gray.900">
+              </p>
+              <p className="font-mono text-5xl font-bold text-gray-900">
                 {formatTime(elapsedTime)}
-              </Text>
-            </Box>
-            <VStack gap={3} align="stretch">
-              <Box>
-                <Text fontSize="sm" fontWeight="medium" color="gray.600">
+              </p>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-medium text-gray-600">
                   Cliente
-                </Text>
-                <Text fontSize="lg" fontWeight="semibold" color="gray.900">
+                </p>
+                <p className="text-lg font-semibold text-gray-900">
                   {activeEntry.client}
-                </Text>
-              </Box>
-              <Box>
-                <Text fontSize="sm" fontWeight="medium" color="gray.600">
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">
                   Descrição
-                </Text>
-                <Text color="gray.900">{activeEntry.description}</Text>
-              </Box>
-            </VStack>
-            <Button onClick={onStop} width="full" size="lg" colorPalette="blue">
-              <Icon mr={2} boxSize={5}>
-                <Square />
-              </Icon>
+                </p>
+                <p className="text-gray-900">{activeEntry.description}</p>
+              </div>
+            </div>
+            <button
+              onClick={onStop}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+            >
+              <Square className="w-5 h-5" />
               Parar Timer
-            </Button>
-          </VStack>
+            </button>
+          </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <VStack gap={4} align="stretch">
+            <div className="space-y-4">
               <Field label="Cliente">
-                <Select.Root value={clientId ? [clientId] : []} onValueChange={(e) => setClientId(e.value[0])} required>
-                  <Select.Trigger>
-                    <Select.ValueText placeholder="Selecione um cliente" />
-                  </Select.Trigger>
-                  <Select.Content>
-                    {clients.length === 0 ? (
-                      <Box px={2} py={6} textAlign="center">
-                        <Text fontSize="sm" color="gray.600">
-                          Nenhum cliente cadastrado
-                        </Text>
-                      </Box>
-                    ) : (
-                      clients.map((client) => (
-                        <Select.Item key={client.id} item={client.id}>
-                          {client.name}
-                        </Select.Item>
-                      ))
-                    )}
-                  </Select.Content>
-                </Select.Root>
+                <select
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Selecione um cliente</option>
+                  {clients.length === 0 ? (
+                    <option value="" disabled>
+                      Nenhum cliente cadastrado
+                    </option>
+                  ) : (
+                    clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                      </option>
+                    ))
+                  )}
+                </select>
               </Field>
               <Field label="Descrição da Tarefa">
-                <Input
+                <input
+                  type="text"
                   placeholder="O que você está fazendo?"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </Field>
-              <Button type="submit" width="full" size="lg" colorPalette="blue" disabled={clients.length === 0}>
-                <Icon mr={2} boxSize={5}>
-                  <Play />
-                </Icon>
+              <button
+                type="submit"
+                disabled={clients.length === 0}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Play className="w-5 h-5" />
                 Iniciar Timer
-              </Button>
-            </VStack>
+              </button>
+            </div>
           </form>
         )}
-      </Card.Body>
-    </Card.Root>
+      </div>
+    </div>
   )
 }

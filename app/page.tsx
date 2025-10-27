@@ -1,161 +1,357 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Box, Container, Heading, Text, HStack, Icon, Grid, GridItem } from "@chakra-ui/react"
 import { TimeTracker } from "@/components/time-tracker"
 import { TimeEntryList } from "@/components/time-entry-list"
 import { TimeStats } from "@/components/time-stats"
 import { ClientManager } from "@/components/client-manager"
+import { EmployeeManager } from "@/components/employee-manager"
 import { Clock } from "lucide-react"
 
+// Employee ID - será lido do .env.local ou definido pelo usuário
+const EMPLOYEE_ID = parseInt(process.env.NEXT_PUBLIC_EMPLOYEE_ID || "1")
+
 export interface TimeEntry {
-  id: string
+  id: number
   client: string
+  clientId: number
   description: string
+  observations?: string
   startTime: Date
   endTime?: Date
   duration: number
 }
 
 export interface Client {
-  id: string
+  id: number
   name: string
+  surname?: string | null
+}
+
+export interface Employee {
+  id: number
+  name: string
+  surname?: string | null
 }
 
 export default function Home() {
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [activeEntry, setActiveEntry] = useState<TimeEntry | null>(null)
   const [clients, setClients] = useState<Client[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Carregar entradas do localStorage
+  // Carregar dados do banco de dados
   useEffect(() => {
-    const saved = localStorage.getItem("timeEntries")
-    if (saved) {
-      const parsed = JSON.parse(saved)
-      setEntries(
-        parsed.map((e: TimeEntry) => ({
-          ...e,
-          startTime: new Date(e.startTime),
-          endTime: e.endTime ? new Date(e.endTime) : undefined,
-        })),
-      )
-    }
-
-    const savedActive = localStorage.getItem("activeEntry")
-    if (savedActive) {
-      const parsed = JSON.parse(savedActive)
-      setActiveEntry({
-        ...parsed,
-        startTime: new Date(parsed.startTime),
-      })
-    }
-
-    const savedClients = localStorage.getItem("clients")
-    if (savedClients) {
-      setClients(JSON.parse(savedClients))
-    }
+    loadData()
   }, [])
 
-  // Salvar entradas no localStorage
-  useEffect(() => {
-    if (entries.length > 0) {
-      localStorage.setItem("timeEntries", JSON.stringify(entries))
-    }
-  }, [entries])
+  const loadData = async () => {
+    try {
+      setLoading(true)
 
-  useEffect(() => {
-    if (activeEntry) {
-      localStorage.setItem("activeEntry", JSON.stringify(activeEntry))
-    } else {
-      localStorage.removeItem("activeEntry")
-    }
-  }, [activeEntry])
-
-  useEffect(() => {
-    localStorage.setItem("clients", JSON.stringify(clients))
-  }, [clients])
-
-  const handleStart = (client: string, description: string) => {
-    const newEntry: TimeEntry = {
-      id: Date.now().toString(),
-      client,
-      description,
-      startTime: new Date(),
-      duration: 0,
-    }
-    setActiveEntry(newEntry)
-  }
-
-  const handleStop = () => {
-    if (activeEntry) {
-      const endTime = new Date()
-      const duration = Math.floor((endTime.getTime() - activeEntry.startTime.getTime()) / 1000)
-      const completedEntry = {
-        ...activeEntry,
-        endTime,
-        duration,
+      // Carregar clientes
+      const clientsRes = await fetch("/api/clients")
+      
+      let clientsData = []
+      if (clientsRes.ok) {
+        const data = await clientsRes.json()
+        if (Array.isArray(data)) {
+          clientsData = data
+        }
       }
-      setEntries([completedEntry, ...entries])
-      setActiveEntry(null)
+      
+      const loadedClients = clientsData.map((c: any) => ({
+        id: c.id,
+        name: `${c.name}${c.surname ? ' ' + c.surname : ''}`,
+        surname: c.surname,
+      }))
+      setClients(loadedClients)
+
+      // Carregar empregados
+      const employeesRes = await fetch("/api/employees")
+      
+      let employeesData = []
+      if (employeesRes.ok) {
+        const data = await employeesRes.json()
+        if (Array.isArray(data)) {
+          employeesData = data
+        }
+      }
+      
+      setEmployees(
+        employeesData.map((e: any) => ({
+          id: e.id,
+          name: e.name,
+          surname: e.surname,
+        })),
+      )
+
+      // Carregar entradas do histórico
+      const entriesRes = await fetch(`/api/work-logs?employee_id=${EMPLOYEE_ID}`)
+      if (entriesRes.ok) {
+        const entriesData = await entriesRes.json()
+        setEntries(
+          entriesData
+            .filter((e: any) => e.end_time) // Apenas entradas finalizadas
+            .map((e: any) => {
+              const startTime = new Date(e.start_time)
+              const endTime = e.end_time ? new Date(e.end_time) : undefined
+              return {
+                id: e.id,
+                client: loadedClients.find((c) => c.id === e.client_id)?.name || "Cliente",
+                clientId: e.client_id,
+                description: e.observations || "",
+                startTime,
+                endTime,
+                duration: Math.floor(((endTime?.getTime() || Date.now()) - startTime.getTime()) / 1000),
+              }
+            }),
+        )
+      }
+
+      // Carregar entrada ativa
+      const activeRes = await fetch(`/api/active-entry?employee_id=${EMPLOYEE_ID}`)
+      if (activeRes.ok) {
+        const activeData = await activeRes.json()
+        if (activeData) {
+          const startTime = new Date(activeData.start_time)
+          setActiveEntry({
+            id: activeData.id,
+            client: activeData.client_name || "Cliente",
+            clientId: activeData.client_id,
+            description: activeData.observations || "",
+            startTime,
+            duration: 0,
+          })
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleDelete = (id: string) => {
-    setEntries(entries.filter((e) => e.id !== id))
-  }
+  const handleStart = async (clientName: string, description: string) => {
+    try {
+      const client = clients.find((c) => c.name === clientName)
+      if (!client) return
 
-  const handleAddClient = (name: string) => {
-    const newClient: Client = {
-      id: Date.now().toString(),
-      name,
+      const response = await fetch("/api/work-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start_time: new Date().toISOString(),
+          employee_id: EMPLOYEE_ID,
+          client_id: client.id,
+          observations: description,
+        }),
+      })
+
+      if (response.ok) {
+        const newEntry = await response.json()
+        const startTime = new Date(newEntry.start_time)
+        setActiveEntry({
+          id: newEntry.id,
+          client: clientName,
+          clientId: client.id,
+          description,
+          startTime,
+          duration: 0,
+        })
+      }
+    } catch (error) {
+      console.error("Erro ao iniciar timer:", error)
     }
-    setClients([...clients, newClient])
   }
 
-  const handleDeleteClient = (id: string) => {
-    setClients(clients.filter((c) => c.id !== id))
+  const handleStop = async () => {
+    if (!activeEntry) return
+
+    try {
+      const endTime = new Date()
+      const response = await fetch(`/api/work-logs`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: activeEntry.id,
+          end_time: endTime.toISOString(),
+        }),
+      })
+
+      if (response.ok) {
+        // Recarregar dados
+        loadData()
+      }
+    } catch (error) {
+      console.error("Erro ao parar timer:", error)
+    }
   }
+
+  const handleDelete = async (id: number) => {
+    try {
+      const response = await fetch(`/api/work-logs?id=${id}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        setEntries(entries.filter((e) => e.id !== id))
+      }
+    } catch (error) {
+      console.error("Erro ao deletar entrada:", error)
+    }
+  }
+
+  const handleAddClient = async (name: string) => {
+    try {
+      const response = await fetch("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.split(" ")[0],
+          surname: name.split(" ").slice(1).join(" ") || null,
+        }),
+      })
+
+      if (response.ok) {
+        await loadData()
+      }
+    } catch (error) {
+      console.error("Erro ao adicionar cliente:", error)
+    }
+  }
+
+  const handleUpdateClient = async (id: number, name: string) => {
+    try {
+      const response = await fetch("/api/clients", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          name: name.split(" ")[0],
+          surname: name.split(" ").slice(1).join(" ") || null,
+        }),
+      })
+
+      if (response.ok) {
+        await loadData()
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar cliente:", error)
+    }
+  }
+
+  const handleDeleteClient = async (id: number) => {
+    try {
+      const response = await fetch(`/api/clients?id=${id}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        await loadData()
+      }
+    } catch (error) {
+      console.error("Erro ao deletar cliente:", error)
+    }
+  }
+
+  const handleAddEmployee = async (employee: { name: string; surname: string | null }) => {
+    try {
+      const response = await fetch("/api/employees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(employee),
+      })
+
+      if (response.ok) {
+        await loadData()
+      }
+    } catch (error) {
+      console.error("Erro ao adicionar empregado:", error)
+    }
+  }
+
+  const handleUpdateEmployee = async (id: number, employee: { name?: string; surname?: string | null }) => {
+    try {
+      const response = await fetch("/api/employees", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...employee }),
+      })
+
+      if (response.ok) {
+        await loadData()
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar empregado:", error)
+    }
+  }
+
+  const handleDeleteEmployee = async (id: number) => {
+    try {
+      const response = await fetch(`/api/employees?id=${id}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        await loadData()
+      }
+    } catch (error) {
+      console.error("Erro ao deletar empregado:", error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p>Carregando...</p>
+      </div>
+    )
+  }
+
 
   return (
-    <Box minH="100vh" bg="gray.50">
-      <Container maxW="container.xl" py={8}>
-        <Box mb={8}>
-          <HStack gap={3}>
-            <Box
-              w={12}
-              h={12}
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              borderRadius="xl"
-              bg="blue.500"
-            >
-              <Icon color="white" boxSize={6}>
-                <Clock />
-              </Icon>
-            </Box>
-            <Box>
-              <Heading size="2xl" fontWeight="bold" color="gray.900">
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto max-w-7xl px-4 py-8">
+        <div className="mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-blue-500">
+              <Clock className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">
                 Time Tracker
-              </Heading>
-              <Text fontSize="sm" color="gray.600">
+              </h1>
+              <p className="text-sm text-gray-600">
                 Registre suas horas trabalhadas
-              </Text>
-            </Box>
-          </HStack>
-        </Box>
+              </p>
+            </div>
+          </div>
+        </div>
 
-        <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={6}>
-          <GridItem display="flex" flexDirection="column" gap={6}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 flex flex-col gap-6">
             <TimeTracker activeEntry={activeEntry} onStart={handleStart} onStop={handleStop} clients={clients} />
             <TimeEntryList entries={entries} onDelete={handleDelete} />
-          </GridItem>
-          <GridItem display="flex" flexDirection="column" gap={6}>
-            <ClientManager clients={clients} onAddClient={handleAddClient} onDeleteClient={handleDeleteClient} />
+          </div>
+          <div className="flex flex-col gap-6">
+            <ClientManager 
+              clients={clients} 
+              onAddClient={handleAddClient}
+              onUpdateClient={handleUpdateClient}
+              onDeleteClient={handleDeleteClient} 
+            />
+            <EmployeeManager 
+              employees={employees}
+              onAddEmployee={handleAddEmployee}
+              onUpdateEmployee={handleUpdateEmployee}
+              onDeleteEmployee={handleDeleteEmployee}
+            />
             <TimeStats entries={entries} activeEntry={activeEntry} />
-          </GridItem>
-        </Grid>
-      </Container>
-    </Box>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
