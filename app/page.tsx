@@ -7,7 +7,7 @@ import { TimeStats } from "@/components/time-stats"
 import { ClientManager } from "@/components/client-manager"
 import { EmployeeManager } from "@/components/employee-manager"
 import { ManualTimeEntry } from "@/components/manual-time-entry"
-import { Clock, Timer, Edit3 } from "lucide-react"
+import { Clock, Timer, Edit3, Calendar } from "lucide-react"
 
 // Employee ID - será lido do .env.local ou definido pelo usuário
 const EMPLOYEE_ID = parseInt(process.env.NEXT_PUBLIC_EMPLOYEE_ID || "1")
@@ -355,18 +355,27 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto max-w-7xl px-4 py-8">
         <div className="mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-blue-500">
-              <Clock className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-blue-500">
+                <Clock className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900">
+                  Time Tracker
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Registre suas horas trabalhadas
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900">
-                Time Tracker
-              </h1>
-              <p className="text-sm text-gray-600">
-                Registre suas horas trabalhadas
-              </p>
-            </div>
+            <a
+              href="/relatorio"
+              className="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center gap-2"
+            >
+              <Calendar className="w-4 h-4" />
+              Relatório Semanal
+            </a>
           </div>
         </div>
 
