@@ -27,20 +27,19 @@ export function TimeStats({ entries, activeEntry }: TimeStatsProps) {
 
   const getTodayTotal = () => {
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
 
     let total = entries
       .filter((e) => {
         const entryDate = new Date(e.startTime)
-        entryDate.setHours(0, 0, 0, 0)
-        return entryDate.getTime() === today.getTime()
+        return entryDate >= todayStart && entryDate < todayEnd
       })
       .reduce((sum, e) => sum + e.duration, 0)
 
     if (activeEntry) {
       const activeDate = new Date(activeEntry.startTime)
-      activeDate.setHours(0, 0, 0, 0)
-      if (activeDate.getTime() === today.getTime()) {
+      if (activeDate >= todayStart && activeDate < todayEnd) {
         total += Math.floor((currentTime - activeEntry.startTime.getTime()) / 1000)
       }
     }
