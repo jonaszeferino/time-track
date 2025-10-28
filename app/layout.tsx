@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
 import { Providers } from "./providers"
+import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
   title: "Time Tracker",
@@ -17,6 +18,7 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
         <Providers>{children}</Providers>
+        <Toaster />
       </body>
     </html>
   )

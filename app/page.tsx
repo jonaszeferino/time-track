@@ -6,7 +6,8 @@ import { TimeEntryList } from "@/components/time-entry-list"
 import { TimeStats } from "@/components/time-stats"
 import { ClientManager } from "@/components/client-manager"
 import { EmployeeManager } from "@/components/employee-manager"
-import { Clock } from "lucide-react"
+import { ManualTimeEntry } from "@/components/manual-time-entry"
+import { Clock, Timer, Edit3 } from "lucide-react"
 
 // Employee ID - será lido do .env.local ou definido pelo usuário
 const EMPLOYEE_ID = parseInt(process.env.NEXT_PUBLIC_EMPLOYEE_ID || "1")
@@ -40,6 +41,7 @@ export default function Home() {
   const [clients, setClients] = useState<Client[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<"timer" | "manual">("timer")
 
   // Carregar dados do banco de dados
   useEffect(() => {
@@ -136,13 +138,18 @@ export default function Home() {
   const handleStart = async (clientName: string, description: string) => {
     try {
       const client = clients.find((c) => c.name === clientName)
-      if (!client) return
+      if (!client) {
+        console.error('Cliente não encontrado:', clientName)
+        return
+      }
+
+      const startTimeISO = new Date().toISOString()
 
       const response = await fetch("/api/work-logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          start_time: new Date().toISOString(),
+          start_time: startTimeISO,
           employee_id: EMPLOYEE_ID,
           client_id: client.id,
           observations: description,
@@ -151,22 +158,26 @@ export default function Home() {
 
       if (response.ok) {
         const newEntry = await response.json()
+        
         const startTime = new Date(newEntry.start_time)
-        setActiveEntry({
+        const entryToSet = {
           id: newEntry.id,
           client: clientName,
           clientId: client.id,
           description,
           startTime,
           duration: 0,
-        })
+        }
+        setActiveEntry(entryToSet)
+      } else {
+        console.error('Erro na resposta:', response.status)
       }
     } catch (error) {
       console.error("Erro ao iniciar timer:", error)
     }
   }
 
-  const handleStop = async () => {
+  const handleStop = async (observations?: string) => {
     if (!activeEntry) return
 
     try {
@@ -177,11 +188,14 @@ export default function Home() {
         body: JSON.stringify({
           id: activeEntry.id,
           end_time: endTime.toISOString(),
+          observations: observations || activeEntry.description,
         }),
       })
 
       if (response.ok) {
-        // Recarregar dados
+        // Limpar o activeEntry para voltar ao formulário de nova tarefa
+        setActiveEntry(null)
+        // Recarregar dados para atualizar o histórico
         loadData()
       }
     } catch (error) {
@@ -302,6 +316,32 @@ export default function Home() {
     }
   }
 
+  const handleAddManualEntry = async (clientId: number, description: string, startTime: string, endTime: string) => {
+    try {
+      const response = await fetch("/api/work-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start_time: startTime,
+          end_time: endTime,
+          employee_id: EMPLOYEE_ID,
+          client_id: clientId,
+          observations: description,
+        }),
+      })
+
+      if (response.ok) {
+        // Recarregar dados para atualizar o histórico
+        loadData()
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error("Erro ao adicionar entrada manual:", error)
+      return false
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -332,7 +372,41 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 flex flex-col gap-6">
-            <TimeTracker activeEntry={activeEntry} onStart={handleStart} onStop={handleStop} clients={clients} />
+            {/* Abas */}
+            <div className="bg-white rounded-lg shadow-sm border">
+              <div className="flex border-b">
+                <button
+                  onClick={() => setActiveTab("timer")}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 font-medium transition-colors ${
+                    activeTab === "timer"
+                      ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  <Timer className="w-4 h-4" />
+                  Timer
+                </button>
+                <button
+                  onClick={() => setActiveTab("manual")}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 font-medium transition-colors ${
+                    activeTab === "manual"
+                      ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Entrada Manual
+                </button>
+              </div>
+            </div>
+
+            {/* Conteúdo das abas */}
+            {activeTab === "timer" ? (
+              <TimeTracker activeEntry={activeEntry} onStart={handleStart} onStop={handleStop} clients={clients} />
+            ) : (
+              <ManualTimeEntry clients={clients} onAdd={handleAddManualEntry} />
+            )}
+            
             <TimeEntryList entries={entries} onDelete={handleDelete} />
           </div>
           <div className="flex flex-col gap-6">

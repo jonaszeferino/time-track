@@ -59,23 +59,21 @@ export function ClientManager({ clients, onAddClient, onUpdateClient, onDeleteCl
         <div className="space-y-4">
           <form onSubmit={handleSubmit} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <h3 className="text-sm font-medium text-gray-700 mb-3">Adicionar Novo Cliente</h3>
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Digite o nome do cliente"
-                  value={newClientName}
-                  onChange={(e) => setNewClientName(e.target.value)}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                />
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 shadow-sm"
-                >
-                  <Plus className="w-5 h-5" />
-                  Adicionar
-                </button>
-              </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Digite o nome do cliente"
+                value={newClientName}
+                onChange={(e) => setNewClientName(e.target.value)}
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+              <button
+                type="submit"
+                className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 shadow-sm whitespace-nowrap"
+              >
+                <Plus className="w-5 h-5" />
+                Adicionar
+              </button>
             </div>
           </form>
 

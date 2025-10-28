@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Field } from "@/components/ui/field"
 import { Play, Square } from "lucide-react"
 import type { TimeEntry, Client } from "@/app/page"
@@ -9,32 +9,58 @@ import type { TimeEntry, Client } from "@/app/page"
 interface TimeTrackerProps {
   activeEntry: TimeEntry | null
   onStart: (client: string, description: string) => void
-  onStop: () => void
+  onStop: (observations?: string) => void
   clients: Client[]
 }
 
 export function TimeTracker({ activeEntry, onStart, onStop, clients }: TimeTrackerProps) {
   const [clientId, setClientId] = useState("")
   const [description, setDescription] = useState("")
+  const [currentDescription, setCurrentDescription] = useState("")
   const [elapsedTime, setElapsedTime] = useState(0)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const startTimeRef = useRef<number | null>(null)
 
+  // Timer simples - cronômetro
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null
+    // Limpar intervalo anterior se existir
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
 
-    if (activeEntry) {
-      interval = setInterval(() => {
-        const now = new Date()
-        const elapsed = Math.floor((now.getTime() - activeEntry.startTime.getTime()) / 1000)
-        setElapsedTime(elapsed)
-      }, 1000)
-    } else {
+    if (!activeEntry) {
       setElapsedTime(0)
+      setCurrentDescription("")
+      startTimeRef.current = null
+      return
     }
 
+    // Sincronizar descrição
+    setCurrentDescription(activeEntry.description || "")
+
+    // Iniciar cronômetro do zero
+    startTimeRef.current = Date.now()
+    setElapsedTime(0)
+    
+    // Atualizar a cada segundo
+    intervalRef.current = setInterval(() => {
+      if (startTimeRef.current) {
+        const now = Date.now()
+        const diff = now - startTimeRef.current
+        const seconds = Math.floor(diff / 1000)
+        setElapsedTime(seconds)
+      }
+    }, 1000)
+
+    // Cleanup
     return () => {
-      if (interval) clearInterval(interval)
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
     }
-  }, [activeEntry])
+  }, [activeEntry?.id]) // Só reiniciar quando mudar o ID da entrada
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
@@ -46,8 +72,10 @@ export function TimeTracker({ activeEntry, onStart, onStop, clients }: TimeTrack
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (activeEntry) {
-      onStop()
+      // Parar timer
+      onStop(currentDescription)
     } else if (clientId && description) {
+      // Iniciar timer
       const selectedClient = clients.find((c) => c.id.toString() === clientId)
       if (selectedClient) {
         onStart(selectedClient.name, description)
@@ -65,7 +93,13 @@ export function TimeTracker({ activeEntry, onStart, onStop, clients }: TimeTrack
       <div className="p-6">
         {activeEntry ? (
           <div className="space-y-6">
-            <div className="rounded-lg bg-gray-100 p-6 text-center">
+            <div className="rounded-lg bg-gray-100 p-6 text-center relative">
+              <div className="absolute top-4 right-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-green-600 font-medium">Ativo</span>
+                </div>
+              </div>
               <p className="text-sm font-medium text-gray-600 mb-2">
                 Tempo Decorrido
               </p>
@@ -83,18 +117,24 @@ export function TimeTracker({ activeEntry, onStart, onStop, clients }: TimeTrack
                 </p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Descrição
-                </p>
-                <p className="text-gray-900">{activeEntry.description}</p>
+                <Field label="Observações">
+                  <textarea
+                    value={currentDescription}
+                    onChange={(e) => setCurrentDescription(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    rows={3}
+                    placeholder="Adicione observações sobre o trabalho realizado..."
+                  />
+                </Field>
               </div>
             </div>
             <button
-              onClick={onStop}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+              onClick={() => onStop(currentDescription)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium relative overflow-hidden"
             >
-              <Square className="w-5 h-5" />
-              Parar Timer
+              <div className="absolute inset-0 bg-red-400 animate-pulse opacity-30"></div>
+              <Square className="w-5 h-5 relative z-10" />
+              <span className="relative z-10">Parar Timer</span>
             </button>
           </div>
         ) : (
@@ -146,3 +186,4 @@ export function TimeTracker({ activeEntry, onStart, onStop, clients }: TimeTrack
     </div>
   )
 }
+
