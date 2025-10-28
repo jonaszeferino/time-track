@@ -59,7 +59,7 @@ export function ClientManager({ clients, onAddClient, onUpdateClient, onDeleteCl
         <div className="space-y-4">
           <form onSubmit={handleSubmit} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <h3 className="text-sm font-medium text-gray-700 mb-3">Adicionar Novo Cliente</h3>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 placeholder="Digite o nome do cliente"
@@ -69,10 +69,10 @@ export function ClientManager({ clients, onAddClient, onUpdateClient, onDeleteCl
               />
               <button
                 type="submit"
-                className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 shadow-sm whitespace-nowrap"
+                className="px-2 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center justify-center gap-2 shadow-sm"
               >
-                <Plus className="w-5 h-5" />
-                Adicionar
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>Adicionar</span>
               </button>
             </div>
           </form>
