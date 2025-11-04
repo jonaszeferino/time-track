@@ -30,13 +30,27 @@ export function TimeEntryList({ entries, onDelete }: TimeEntryListProps) {
     // Criar uma nova data com o ajuste
     const adjustedDate = new Date(dateObj.getTime() - (3 * 60 * 60 * 1000)) // Subtrai 3 horas
     
-    // Formatar sem timezone específico (vai usar o local)
+    // Formatar apenas a data (sem hora)
     return new Intl.DateTimeFormat("pt-BR", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+    }).format(adjustedDate)
+  }
+
+  const formatTime = (date: Date) => {
+    // Garantir que estamos trabalhando com um objeto Date válido
+    const dateObj = date instanceof Date ? date : new Date(date)
+    
+    // Se a data veio do banco com +3 horas, precisamos subtrair
+    // Criar uma nova data com o ajuste
+    const adjustedDate = new Date(dateObj.getTime() - (3 * 60 * 60 * 1000)) // Subtrai 3 horas
+    
+    // Formatar apenas a hora
+    return new Intl.DateTimeFormat("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
+      second: "2-digit",
     }).format(adjustedDate)
   }
 
@@ -118,9 +132,18 @@ export function TimeEntryList({ entries, onDelete }: TimeEntryListProps) {
         <p className="text-sm text-gray-600">
           {entry.description}
         </p>
-        <p className="text-xs text-gray-600">
-          {formatDate(entry.startTime)}
-        </p>
+        <div className="flex flex-col gap-1 text-xs text-gray-600">
+          <span>{formatDate(entry.startTime)}</span>
+          {entry.endTime ? (
+            <span className="text-gray-500">
+              {formatTime(entry.startTime)} - {formatTime(entry.endTime)}
+            </span>
+          ) : (
+            <span className="text-gray-500">
+              {formatTime(entry.startTime)} - Em andamento
+            </span>
+          )}
+        </div>
       </div>
       <button
         onClick={() => handleDeleteClick(entry)}
