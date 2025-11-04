@@ -116,6 +116,34 @@ export function TimeTracker({ activeEntry, onStart, onStop, clients }: TimeTrack
                   {activeEntry.client}
                 </p>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">
+                    Hora de Entrada
+                  </p>
+                  <p className="text-base font-semibold text-gray-900">
+                    {activeEntry.startTime.toLocaleTimeString('pt-BR', { 
+                      hour: '2-digit', 
+                      minute: '2-digit',
+                      second: '2-digit'
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">
+                    Hora de Saída
+                  </p>
+                  <p className="text-base font-semibold text-gray-500">
+                    {activeEntry.endTime 
+                      ? activeEntry.endTime.toLocaleTimeString('pt-BR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit',
+                          second: '2-digit'
+                        })
+                      : 'Em andamento'}
+                  </p>
+                </div>
+              </div>
               <div>
                 <Field label="Observações">
                   <textarea
